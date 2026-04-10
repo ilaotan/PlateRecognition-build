@@ -11,24 +11,40 @@
 大陆车牌识别、港澳车牌识别、台湾车牌识别在线体验:http://zhoujiayao.com:8200/
 
 ## 特性
-1. 支持Linux/Win/Centos/Ubuntu下CPU、GPU部署，支持定制化开发
-2. 支持C/C++，python，C#,Java等语言调用
-3. 支持Android、uniapp部署
-4. 支持瑞芯微rv1106/rv1106/rk3588/rk3568/rk3576等侧端部署，可获取测试demo(微信ID: cbp931126)
-   | 型号 |速度|精度 |接口|测试系统|
-   |:----------:|:----------:|:----------:|:----------:|:----------:|
-   |rk3588           |~25ms|       99%+    |C/C++、python|ubuntu、buildroot|
-   |rk3576           |~31ms|       99%+    |C/C++、python|ubuntu、buildroot|
-   |rk3568 	         |~70ms|       99%+    |C/C++、python|ubuntu、buildroot|
-   |rv1126B 	      |~50ms|       99%+    |  C/C++      |ubuntu、buildroot|
-   |rv1126 	         |~62ms|       99%+    |  C/C++      |ubuntu、buildroot|
-   |rv1106 	         |~158ms|      99%+    |  C/C++      |buildroot|
-5. 支持海思系列侧端部署:SS928/Hi3403/Hi3519DV500/Hi3516DV500/Hi3516DV300/Hi3516CV610等，获取测试demo(微信ID: cbp931126)
-6. 支持算能BM1684系列侧端部署
-7. 支持爱芯系列侧端部署:
+1. 支持车牌识别+车牌颜色+车辆距离+车道线识别
+2. 支持Linux、Win、Centos、Ubuntu、统信UOS、麒麟系统(Kylin)下CPU、GPU部署，支持定制化开发
+3. 支持C/C++，python，C#、Java等语言调用
+4. 支持Android、ios、uniapp部署，可获取商用测试demo(微信ID: cbp931126)
+   |型号 |速度|精度 |接口|测试系统|图像大小|
+   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+   |红米K30pro(骁龙865)     |~70ms(Cpu/4Core)|       99%+    |kotlin、java|android|1920*1080|
+   |红米K60(骁龙8+Gen1)        |~60ms(Cpu/4Core)|       99%+    |kotlin、java|android|1920*1080|
+   |iphone13(A15)       |~50ms(Cpu/2Core)|       99%+    |swift、Objective-C|ios|1920*1080|
+   |iPad Air 3(A12)      |~100ms(Cpu/2Core)|       99%+    |swift、Objective-C|ios|1920*1080|
+5. 支持瑞芯微rv1106/rv1106/rk3588/rk3568/rk3576等侧端部署，可获取商用测试demo(微信ID: cbp931126)
+   | 型号 |速度|精度 |接口|测试系统|图像大小|
+   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+   |rk3588           |~25ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
+   |rk3576           |~25ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
+   |rk3568 	         |~70ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
+   |rv1126B 	      |~25ms|       99%+    |  C/C++      |ubuntu、buildroot、debian、android|1920*1080|
+   |rv1126 	         |~62ms|       99%+    |  C/C++      |ubuntu、buildroot|1920*1080|
+   |rv1106 	         |~150ms|      99%+    |  C/C++      |buildroot|1920*1080|
+6. 支持海思系列侧端部署:SS928/Hi3403/Hi3519DV500/Hi3516DV500/Hi3516DV300/Hi3516CV610等，获取商用测试demo(微信ID: cbp931126)
+   | 型号 |速度|精度 |接口|测试系统|图像大小|
+   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
+   |SS928/Hi3403 |~40ms|       99%+    |C/C++|ubuntu、BusyBox|1920*1080|
+   |Hi3519DV500  |~50ms|       99%+    |C/C++|BusyBox|1920*1080|
+   |Hi3516CV610  |~150ms|       99%+    |C/C++|BusyBox|1920*1080|
+7. 支持算能BM1684系列侧端部署
+8. 支持爱芯系列侧端部署:
 
 
 ## 识别效果
+
+### 车道线+车距+车牌识别效果
+<img src="resources/21.jpg" alt="drawing" width="380"/> <img src="resources/22.jpg" alt="drawing" width="380"/>
+<img src="resources/23.jpg" alt="drawing" width="380"/> <img src="resources/24.jpg" alt="drawing" width="380"/>
 
 ### 韩国车牌识别效果
 <img src="resources/1c30874f261703b7b8b20f93fb4ecfa1.jpg" alt="drawing" width="380"/> <img src="resources/438278612b5b53d29b563a0c92ba58c9.jpg" alt="drawing" width="380"/>
@@ -86,7 +102,7 @@
    |yolov5_plate                 |1|           yolov7车牌检测               |
    |yolov7_plate 				      |1|           yolov5 车牌检测              |
 
-5. 车牌识别准确率(测试集数量:5.2w张)
+5. 车牌识别准确率(测试集数量:7.2w张)
    | 模型 |  size    |  准确率   |速度| 平台|
 	|:----------:|:----------:|:----------:|:----------:|:----------:|
    |plate_recognition_color|s|   92.40%|452.480us|RTX3090|
@@ -170,7 +186,5 @@ set(TensorRT_LIB "/xxx/xxx/TensorRT-8.2.5.1/lib" CACHE INTERNAL "TensorRT Librar
 # References
 1. https://github.com/deepcam-cn/yolov5-face
 2. https://github.com/derronqi/yolov7-face/tree/main
-3. https://github.com/we0091234/yolov7-face-tensorrt
-4. https://github.com/derronqi/yolov8-face
-5. https://github.com/we0091234/crnn_plate_recognition
-6. https://github.com/we0091234/Chinese_license_plate_detection_recognition   
+3. https://github.com/derronqi/yolov8-face
+
