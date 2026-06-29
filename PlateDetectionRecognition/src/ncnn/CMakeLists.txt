@@ -127,8 +127,7 @@ target_compile_options(hyperlpr3 PRIVATE
 # it explicitly so a future NDK change can't silently break armv7.
 if(ANDROID_ABI STREQUAL "armeabi-v7a")
     target_compile_options(hyperlpr3 PRIVATE
-        -mfloat-abi=softfp -mfpu=neon -mthumb
-        -fno-integrated-as)
+        -mfloat-abi=softfp -mfpu=neon -mthumb)
 endif()
 
 target_link_libraries(hyperlpr3
