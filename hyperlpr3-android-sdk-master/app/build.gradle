@@ -3,14 +3,18 @@ plugins {
 }
 
 android {
+    namespace 'com.platerecognition.demo'
     compileSdk 28
 
     defaultConfig {
-        applicationId "com.hyperai.hyperlpr_sdk_demo"
+        // Distinct from the legacy `com.hyperai.hyperlpr_sdk_demo` so the
+        // rebuilt APK installs side-by-side with the original rather
+        // than overwriting it.
+        applicationId "com.platerecognition.demo"
         minSdk 21
         targetSdk 28
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0-ncnn"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
