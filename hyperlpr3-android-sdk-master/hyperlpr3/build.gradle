@@ -1,0 +1,87 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+android {
+    compileSdk 28
+    ndkVersion '25.2.9519653'
+
+    defaultConfig {
+        minSdk 21
+        targetSdk 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+
+        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17", "-fno-rtti", "-fno-exceptions", "-fvisibility=hidden"
+                arguments "-DANDROID_STL=c++_static"
+                // Pass through NCNN + OpenCV install prefixes so the CMake
+                // script does not need to know the absolute path at the
+                // call site. The CI workflow sets these as env vars;
+                // local builds can pass them as -P flags.
+                arguments "-DNCNN_ROOT=${project.findProperty('NCNN_ROOT') ?: System.getenv('NCNN_ROOT') ?: ''}"
+                arguments "-DOPENCV_ROOT=${project.findProperty('OPENCV_ANDROID') ?: System.getenv('OPENCV_ANDROID') ?: System.getenv('OPENCV_ROOT') ?: ''}"
+            }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    sourceSets {
+        main {
+            // Old hand-shipped .so is no longer used. The new build
+            // emits into build/intermediates/cmake/<buildType>/obj/<abi>/.
+            jniLibs.srcDirs = ['src/main/jniLibs']
+            assets.srcDirs = ['src/main/assets']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.3.0'
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+
+}
+
+afterEvaluate {
+    // 官方建议使用上传方法
+    publishing {
+        publications {
+            // Creates a Maven publication called "release".
+            release(MavenPublication) {
+                from components.release // 表示发布 release（jitpack 都不会使用到）
+                groupId = 'com.github.tunmx' //groupId 随便取 , 这个是依赖库的组 id
+                artifactId = 'hyperlpr3-android-sdk'  //artifactId 随便取 , 依赖库的名称（jitpack 都不会使用到）
+                version = '1.0.3' // 当前版本依赖库版本号，这个jitpack不会使用到，只是我们开发者自己查看
+            }
+        }
+    }
+}

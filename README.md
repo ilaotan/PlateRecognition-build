@@ -2,7 +2,7 @@
 
 如果觉得有用，不妨给个Star⭐️🌟支持一下吧~ 谢谢！
 
-# Acknowledgments & Contact 
+# Acknowledgments & Contact
 ### 1.WeChat ID: cbp931126
 1. 加入讨论群(备注：PlateAlgorithm),大佬多多多卷卷卷；
 2. 加微信可以获得整理好的开源和部分私有车牌检测和识别数据(数据需要30元费用)；
@@ -15,29 +15,43 @@
 2. 支持Linux、Win、Centos、Ubuntu、统信UOS、麒麟系统(Kylin)下CPU、GPU部署，支持定制化开发
 3. 支持C/C++，python，C#、Java等语言调用
 4. 支持Android、ios、uniapp部署，可获取商用测试demo(微信ID: cbp931126)
-   |型号 |速度|精度 |接口|测试系统|图像大小|
-   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
-   |红米K30pro(骁龙865)     |~70ms(Cpu/4Core)|       99%+    |kotlin、java|android|1920*1080|
-   |红米K60(骁龙8+Gen1)        |~60ms(Cpu/4Core)|       99%+    |kotlin、java|android|1920*1080|
-   |iphone13(A15)       |~50ms(Cpu/2Core)|       99%+    |swift、Objective-C|ios|1920*1080|
-   |iPad Air 3(A12)      |~100ms(Cpu/2Core)|       99%+    |swift、Objective-C|ios|1920*1080|
 5. 支持瑞芯微rv1106/rv1106/rk3588/rk3568/rk3576等侧端部署，可获取商用测试demo(微信ID: cbp931126)
-   | 型号 |速度|精度 |接口|测试系统|图像大小|
-   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
-   |rk3588           |~25ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
-   |rk3576           |~25ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
-   |rk3568 	         |~70ms|       99%+    |C/C++、python|ubuntu、buildroot、debian、android|1920*1080|
-   |rv1126B 	      |~25ms|       99%+    |  C/C++      |ubuntu、buildroot、debian、android|1920*1080|
-   |rv1126 	         |~62ms|       99%+    |  C/C++      |ubuntu、buildroot|1920*1080|
-   |rv1106 	         |~150ms|      99%+    |  C/C++      |buildroot|1920*1080|
 6. 支持海思系列侧端部署:SS928/Hi3403/Hi3519DV500/Hi3516DV500/Hi3516DV300/Hi3516CV610等，获取商用测试demo(微信ID: cbp931126)
-   | 型号 |速度|精度 |接口|测试系统|图像大小|
-   |:----------:|:----------:|:----------:|:----------:|:----------:|:----------:|
-   |SS928/Hi3403 |~40ms|       99%+    |C/C++|ubuntu、BusyBox|1920*1080|
-   |Hi3519DV500  |~50ms|       99%+    |C/C++|BusyBox|1920*1080|
-   |Hi3516CV610  |~150ms|       99%+    |C/C++|BusyBox|1920*1080|
 7. 支持算能BM1684系列侧端部署
 8. 支持爱芯系列侧端部署:
+
+## Android 构建 (CI)
+
+本仓库将原 C++/TensorRT 实现的 `PlateDetectionRecognition` 移植到 **NCNN** 推理引擎，并对接进 `hyperlpr3-android-sdk`。所有编译、模型转换、APK 打包均通过 GitHub Actions 完成，**无需本地编译**。
+
+### 工作流
+
+| 文件 | 作用 |
+| ---- | ---- |
+| `.github/workflows/build-so.yml` | 编译 `libhyperlpr3.so` (arm64-v8a / armeabi-v7a) 并导出为工件 |
+| `.github/workflows/build-apk.yml` | 完整构建 AAR + APK (Demo 工程) |
+| `scripts/build_ncnn_android.sh` | NCNN Android 源码编译脚本 |
+| `scripts/convert_onnx_to_ncnn.sh` | `yolov7plate.onnx` & `plate_recognition_color.onnx` → NCNN `.param`/`.bin` |
+| `scripts/build_hyperlpr3_so.sh` | 独立 NDK 构建 `libhyperlpr3.so` (供 build-so 使用) |
+| `PlateDetectionRecognition/src/ncnn/` | NCNN 实现的检测器、识别器、算法整合 |
+| `PlateDetectionRecognition/src/ncnn/jni/jni_bridge.cpp` | JNI 桥接层，对应 Java `com.hyperai.hyperlpr3.core.HyperLPRCore` |
+| `hyperlpr3-android-sdk-master/hyperlpr3/src/main/cpp/CMakeLists.txt` | Android library 模块的 CMake 入口 (Gradle externalNativeBuild 调用) |
+
+### 触发方式
+
+- **push** 到 `main` / `master` / `develop` 分支会同时触发 `build-so` 与 `build-apk`。
+- **手动触发**：在 GitHub Actions 页面选择对应 workflow，点击 `Run workflow`。
+- `build-apk` 完成后可在 Artifacts 区域下载：
+  - `hyperlpr3-apk` — 可直接安装的 APK
+  - `hyperlpr3-aar` — 集成进其它 Android 工程的 AAR
+  - `plate-ncnn-models` — 转换后的 NCNN 模型文件
+
+### 关键设计
+
+- **推理引擎**：原项目使用 TensorRT + CUDA (仅 NVIDIA GPU)，无法在 Android 上运行。改用 **NCNN** (Tencent 开源) 做纯 CPU 推理，体积小、零依赖、支持 `arm64-v8a` / `armeabi-v7a`。
+- **JVM 接口兼容**：Java 端 `HyperLPRCore` 的 `native` 方法签名保持不变；JNI 桥接层把 Java 调用映射到 C++ `Initialize/PlateRecognition_yolov7/Release`。使用方代码无需改动。
+- **资源目录**：`assets/r2_mobile` → `assets/plate_ncnn`，由 `SDKConfig.packDirName` 统一管理。
+- **模型参数**：`HyperLPRParameter` 默认值已根据 NCNN 性能特征调整 (`threads=4`, `boxConfThreshold=0.3f` 等)。
 
 
 ## 识别效果
