@@ -50,7 +50,7 @@ cmake "../../PlateDetectionRecognition/src/ncnn" \
     -DCMAKE_BUILD_TYPE=Release \
     -DANDROID_STL=c++_static
 
-cmake --build . --parallel
+cmake --build . --parallel 2
 
 # Copy the resulting .so into the requested output directory.
 find . -name "libhyperlpr3.so" -exec cp -v {} "${OUT_DIR}/${TARGET_ABI}/" \;

@@ -8,7 +8,13 @@
 # block, but it also works as a plain CMake project for building .so
 # artefacts from CI.
 
-cmake_minimum_required(VERSION 3.18.1)
+cmake_minimum_required(VERSION 3.22.1)
+
+# Suppress the NDK toolchain's <3.10 deprecation noise that pollutes CI
+# logs. 3.22.1 matches the version Gradle uses to drive our AAR build.
+if(POLICY CMP0094)
+    cmake_policy(SET CMP0094 NEW)  # find_package() uses upper-case <PACKAGEROOT>
+endif()
 
 project(hyperlpr3_ncnn LANGUAGES CXX C)
 
@@ -24,25 +30,60 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
 # ---- OpenCV (Android package) --------------------------------------------
 # The Android library module ships an OpenCV AAR; when this file is
 # invoked standalone, the CI workflow provides OpenCV headers/libs via
-# $OPENCV_ANDROID path.
+# $OPENCV_ANDROID path. We support the multiple layouts that the
+# upstream OpenCV Android SDK ships, depending on version:
+#   4.10+    -> sdk/native/staticlibs/<abi>/ + sdk/native/libs/<abi>/
+#   4.5~4.8  -> sdk/native/jni/3rdparty/libs/<abi>/ + sdk/native/jni/<abi>/
+#   4.0~4.2  -> sdk/native/libs/<abi>/ (shared only)
 
 if(DEFINED ENV{OPENCV_ANDROID})
   set(OPENCV_ANDROID $ENV{OPENCV_ANDROID})
 endif()
 
-if(EXISTS "${OPENCV_ANDROID}/sdk/native/jni/include")
-  include_directories(${OPENCV_ANDROID}/sdk/native/jni/include)
-  set(OPENCV_LIBS_DIR "${OPENCV_ANDROID}/sdk/native/jni/${ANDROID_ABI}")
-  set(OPENCV_LIBS
-      ${OPENCV_LIBS_DIR}/libopencv_core.a
-      ${OPENCV_LIBS_DIR}/libopencv_imgproc.a
-      ${OPENCV_LIBS_DIR}/libopencv_imgcodecs.a
-      ${OPENCV_LIBS_DIR}/libopencv_calib3d.a)
-else()
+set(_opencv_h_dirs
+    "${OPENCV_ANDROID}/sdk/native/jni/include"
+    "${OPENCV_ANDROID}/sdk/native/staticlibs/include")  # future layout
+foreach(d IN LISTS _opencv_h_dirs)
+  if(EXISTS "${d}/opencv2/core.hpp")
+    include_directories(${d})
+    set(_opencv_inc "${d}")
+    break()
+  endif()
+endforeach()
+
+if(NOT _opencv_inc)
   # Fall back to a system OpenCV (used by the standalone test driver on
   # Linux). The Android build always sets OPENCV_ANDROID above.
   find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs calib3d)
   set(OPENCV_LIBS ${OpenCV_LIBS})
+else()
+  set(OPENCV_LIBS "")
+  set(_opencv_candidate_dirs
+      "${OPENCV_ANDROID}/sdk/native/jni/3rdparty/libs/${ANDROID_ABI}"
+      "${OPENCV_ANDROID}/sdk/native/staticlibs/${ANDROID_ABI}")
+  foreach(d IN LISTS _opencv_candidate_dirs)
+    if(EXISTS "${d}/libopencv_core.a")
+      foreach(m core imgproc imgcodecs calib3d)
+        list(APPEND OPENCV_LIBS "${d}/libopencv_${m}.a")
+      endforeach()
+      break()
+    endif()
+  endforeach()
+
+  if(NOT OPENCV_LIBS AND EXISTS "${OPENCV_ANDROID}/sdk/native/libs/${ANDROID_ABI}")
+    # Fall back to the shared .so from a packaged OpenCV Android SDK.
+    foreach(m core imgproc imgcodecs calib3d)
+      list(APPEND OPENCV_LIBS
+           "${OPENCV_ANDROID}/sdk/native/libs/${ANDROID_ABI}/libopencv_${m}.so")
+    endforeach()
+  endif()
+
+  if(NOT OPENCV_LIBS)
+    message(FATAL_ERROR
+      "OpenCV libs not found for ${ANDROID_ABI} under ${OPENCV_ANDROID}. "
+      "Tried sdk/native/jni/3rdparty/libs, sdk/native/staticlibs and "
+      "sdk/native/libs.")
+  endif()
 endif()
 
 # ---- NCNN ----------------------------------------------------------------
@@ -90,7 +131,17 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 add_library(hyperlpr3 SHARED ${PDR_NCNN_SRCS})
 
 target_compile_options(hyperlpr3 PRIVATE
-    -O2 -fvisibility=hidden -fno-rtti -fno-exceptions -Wall)
+    -O2 -fvisibility=hidden -fno-rtti -fno-exceptions -Wall
+    -Wno-unused-parameter -Wno-deprecated-declarations)
+
+# armv7 needs explicit float-abi and CPU tune; NDK r26b defaults to
+# -mfloat-abi=softfp which is correct for armeabi-v7a + NEON. We pin
+# it explicitly so a future NDK change can't silently break armv7.
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    target_compile_options(hyperlpr3 PRIVATE
+        -mfloat-abi=softfp -mfpu=neon -mthumb
+        -fno-integrated-as)
+endif()
 
 target_link_libraries(hyperlpr3
     ${NCNN_LIB}

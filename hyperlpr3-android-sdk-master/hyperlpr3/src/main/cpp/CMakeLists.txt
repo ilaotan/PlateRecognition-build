@@ -128,6 +128,15 @@ target_compile_options(hyperlpr3 PRIVATE
     -O2 -fvisibility=hidden -fno-rtti -fno-exceptions -Wall
     -Wno-unused-parameter -Wno-deprecated-declarations)
 
+# armv7 needs explicit float-abi / FPU / thumb flags; without these,
+# NDK r26b may default to a configuration that is incompatible with
+# the NCNN static lib built for armeabi-v7a + NEON.
+if(ANDROID_ABI STREQUAL "armeabi-v7a")
+    target_compile_options(hyperlpr3 PRIVATE
+        -mfloat-abi=softfp -mfpu=neon -mthumb
+        -fno-integrated-as)
+endif()
+
 # libncnn needs a static libz on some NDK versions; the NDK ships one.
 find_library(log-lib log)
 find_library(android-lib android)
