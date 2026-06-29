@@ -19,9 +19,19 @@ MODELS_SRC="${2:-./PlateDetectionRecognition/test}"
 MODELS_OUT="${3:-./hyperlpr3-android-sdk-master/hyperlpr3/src/main/assets/plate_ncnn}"
 FORCE="${4:-0}"
 
-if [[ ! -x "${ONNX2NCNN_BIN}" && ! -f "${ONNX2NCNN_BIN}" ]]; then
+# Accept either the path to the onnx2ncnn binary, or a directory that
+# contains it. Most CI setups build NCNN to <install>/bin/ and pass the
+# directory, so resolve it automatically.
+if [[ -d "${ONNX2NCNN_BIN}" ]]; then
+    if [[ -x "${ONNX2NCNN_BIN}/onnx2ncnn" ]]; then
+        ONNX2NCNN_BIN="${ONNX2NCNN_BIN}/onnx2ncnn"
+    fi
+fi
+
+if [[ ! -x "${ONNX2NCNN_BIN}" ]]; then
     echo "ERROR: onnx2ncnn binary not found at: ${ONNX2NCNN_BIN}" >&2
-    echo "Build ncnn with -DNCNN_BUILD_TOOLS=ON and pass the path here." >&2
+    echo "Build ncnn with -DNCNN_BUILD_TOOLS=ON and pass the path or" \
+         "containing directory here." >&2
     exit 1
 fi
 
@@ -43,8 +53,11 @@ convert_one() {
     echo "CONVERT ${name} (${onnx})"
     "${ONNX2NCNN_BIN}" "${onnx}" "${param}" "${bin}"
     # Reduce fp32 weights to fp16 to shrink the .bin for mobile.
-    if command -v ncnnoptimize >/dev/null 2>&1; then
-        ncnnoptimize "${param}" "${bin}" "${param}.opt" "${bin}.opt" 65536
+    # Prefer ncnnoptimize from the same directory as onnx2ncnn.
+    local optimize
+    optimize="$(dirname "${ONNX2NCNN_BIN}")/ncnnoptimize"
+    if [[ -x "${optimize}" ]]; then
+        "${optimize}" "${param}" "${bin}" "${param}.opt" "${bin}.opt" 65536
         mv -f "${param}.opt" "${param}"
         mv -f "${bin}.opt"   "${bin}"
     fi
