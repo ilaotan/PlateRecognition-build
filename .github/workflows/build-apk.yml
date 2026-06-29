@@ -126,8 +126,6 @@ jobs:
         working-directory: hyperlpr3-android-sdk-master
         run: |
           cat >> gradle.properties <<EOF
-
-# NCNN + OpenCV locations (consumed by externalNativeBuild).
 NCNN_ROOT=${{ env.BUILD_DIR }}/ncnn-install
 OPENCV_ANDROID=${{ env.BUILD_DIR }}/opencv-android
 EOF
