@@ -43,11 +43,12 @@ cmake "${NCNN_SRC}" \
     -DNCNN_VULKAN=OFF \
     -DNCNN_PYTHON=OFF \
     -DNCNN_SHARED_LIB=OFF \
-    -DNCNN_OPENMP=ON \
-    -DNCNN_AVX2=ON \
+    -DNCNN_OPENMP=OFF \
+    -DNCNN_AVX2=OFF \
+    -DNCNN_AVX512=OFF \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}"
 
-cmake --build . --parallel
+cmake --build . --parallel 2
 cmake --install .
 
 # Verify the tools actually landed in <install>/bin; otherwise fail

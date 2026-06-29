@@ -80,7 +80,7 @@ cmake "${NCNN_SRC}" \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
-cmake --build . --parallel
+cmake --build . --parallel 2
 cmake --install .
 
 # Place the .a in a predictable per-ABI subdir for the consumer
