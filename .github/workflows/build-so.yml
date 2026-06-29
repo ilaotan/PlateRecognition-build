@@ -1,0 +1,163 @@
+# SPDX-License-Identifier: MIT
+name: build-so
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'PlateDetectionRecognition/src/ncnn/**'
+      - 'scripts/build_ncnn_android.sh'
+      - 'scripts/build_hyperlpr3_so.sh'
+      - 'scripts/convert_onnx_to_ncnn.sh'
+      - 'PlateDetectionRecognition/test/yolov7plate.onnx'
+      - 'PlateDetectionRecognition/test/plate_recognition_color.onnx'
+      - '.github/workflows/build-so.yml'
+  pull_request:
+    branches: [main, master, develop]
+
+concurrency:
+  group: build-so-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-so:
+    name: Build libhyperlpr3.so (${{ matrix.abi }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a]
+        ndk: [26.1.10909125]
+
+    env:
+      NDK_VERSION: ${{ matrix.ndk }}
+      NCNN_VERSION: 20240820
+      ANDROID_API: 21
+      ANDROID_ABI: ${{ matrix.abi }}
+      BUILD_DIR: ${{ github.workspace }}/build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build clang g++-multilib \
+            git ca-certificates \
+            openjdk-17-jdk-headless unzip
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Cache Android NDK
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/android-ndk-r${{ env.NDK_VERSION }}
+          key: ndk-r${{ env.NDK_VERSION }}-v1
+
+      - name: Install Android NDK
+        if: steps.cache-ndk.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${{ runner.temp }}"
+          cd "${{ runner.temp }}"
+          curl -fSL -o ndk.zip \
+            "https://dl.google.com/android/repository/android-ndk-r${{ env.NDK_VERSION }}-linux.zip"
+          unzip -q ndk.zip
+          rm ndk.zip
+
+      - name: Resolve NDK path
+        id: ndk
+        run: |
+          NDK_DIR="$(find "${{ runner.temp }}" -maxdepth 1 -type d -name 'android-ndk-r*' | head -n1)"
+          echo "NDK_DIR=${NDK_DIR}" >> "$GITHUB_OUTPUT"
+          echo "ANDROID_NDK_HOME=${NDK_DIR}" >> "$GITHUB_ENV"
+
+      - name: Cache NCNN Android build
+        id: cache-ncnn
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.BUILD_DIR }}/ncnn-install
+          key: ncnn-android-${{ env.NCNN_VERSION }}-${{ env.ANDROID_ABI }}-v1
+
+      - name: Build NCNN for Android
+        if: steps.cache-ncnn.outputs.cache-hit != 'true'
+        run: |
+          bash scripts/build_ncnn_android.sh \
+            ./ncnn \
+            "${{ env.BUILD_DIR }}/ncnn-install" \
+            "${{ env.ANDROID_NDK_HOME }}" \
+            "${{ env.ANDROID_ABI }}"
+
+      - name: Download OpenCV Android SDK
+        run: |
+          mkdir -p "${{ env.BUILD_DIR }}/opencv-android"
+          cd "${{ env.BUILD_DIR }}/opencv-android"
+          # OpenCV 4.10.0 Android pack. Bump as needed.
+          if [ ! -d sdk ]; then
+            curl -fSL -o opencv.zip \
+              "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-android-sdk.zip"
+            unzip -q opencv.zip
+            rm opencv.zip
+            # The release zip extracts to "OpenCV-android-sdk"; rename for clarity.
+            mv OpenCV-android-sdk sdk 2>/dev/null || true
+          fi
+
+      - name: Convert ONNX models to NCNN
+        run: |
+          bash scripts/convert_onnx_to_ncnn.sh \
+            "${{ env.BUILD_DIR }}/ncnn-install/bin" \
+            ./PlateDetectionRecognition/test \
+            "${{ env.BUILD_DIR }}/plate_ncnn_models"
+
+      - name: Build libhyperlpr3.so
+        run: |
+          bash scripts/build_hyperlpr3_so.sh \
+            "${{ env.ANDROID_NDK_HOME }}" \
+            "${{ env.BUILD_DIR }}/ncnn-install" \
+            "${{ env.BUILD_DIR }}/opencv-android" \
+            "${{ env.ANDROID_ABI }}" \
+            "${{ env.BUILD_DIR }}/so-out"
+
+      - name: Verify ELF arch
+        run: |
+          SO="${{ env.BUILD_DIR }}/so-out/${{ env.ANDROID_ABI }}/libhyperlpr3.so"
+          ls -la "${SO}"
+          file "${SO}"
+          # Sanity check: confirm required symbols exist.
+          if command -v llvm-readelf >/dev/null 2>&1; then
+            llvm-readelf -W --dyn-syms "${SO}" | \
+              grep -E "Java_com_hyperai_hyperlpr3_core_HyperLPRCore" || \
+              (echo "ERROR: missing JNI symbols" && exit 1)
+          fi
+          echo "OK: libhyperlpr3.so built for ${{ env.ANDROID_ABI }}"
+
+      - name: Upload .so artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libhyperlpr3-${{ env.ANDROID_ABI }}
+          path: ${{ env.BUILD_DIR }}/so-out/${{ env.ANDROID_ABI }}/libhyperlpr3.so
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload NCNN models
+        uses: actions/upload-artifact@v4
+        with:
+          name: plate-ncnn-models
+          path: ${{ env.BUILD_DIR }}/plate_ncnn_models
+          if-no-files-found: warn
+          retention-days: 14
