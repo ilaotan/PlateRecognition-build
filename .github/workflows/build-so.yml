@@ -3,18 +3,6 @@ name: build-so
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, master, develop]
-    paths:
-      - 'PlateDetectionRecognition/src/ncnn/**'
-      - 'scripts/build_ncnn_android.sh'
-      - 'scripts/build_hyperlpr3_so.sh'
-      - 'scripts/convert_onnx_to_ncnn.sh'
-      - 'PlateDetectionRecognition/test/yolov7plate.onnx'
-      - 'PlateDetectionRecognition/test/plate_recognition_color.onnx'
-      - '.github/workflows/build-so.yml'
-  pull_request:
-    branches: [main, master, develop]
 
 concurrency:
   group: build-so-${{ github.ref }}
@@ -75,8 +63,10 @@ jobs:
         run: |
           mkdir -p "${{ runner.temp }}"
           cd "${{ runner.temp }}"
+          # 26.1.10909125 is the internal version of NDK r26b. The download
+          # filename uses the letter form, not the numeric version.
           curl -fSL -o ndk.zip \
-            "https://dl.google.com/android/repository/android-ndk-r${{ env.NDK_VERSION }}-linux.zip"
+            "https://dl.google.com/android/repository/android-ndk-r26b-linux.zip"
           unzip -q ndk.zip
           rm ndk.zip
 

@@ -3,17 +3,6 @@ name: build-apk
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, master, develop]
-    paths:
-      - 'PlateDetectionRecognition/src/ncnn/**'
-      - 'hyperlpr3-android-sdk-master/**'
-      - '.github/workflows/build-apk.yml'
-  pull_request:
-    branches: [main, master, develop]
-  workflow_run:
-    workflows: [build-so]
-    types: [completed]
 
 concurrency:
   group: build-apk-${{ github.ref }}
@@ -22,12 +11,6 @@ concurrency:
 jobs:
   build-apk:
     name: Build AAR & APK
-    # Only run after the build-so workflow succeeded when triggered via
-    # workflow_run. For direct runs (push/PR/workflow_dispatch) run
-    # unconditionally and let Gradle compile native from scratch.
-    if: >
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-22.04
 
     env:
@@ -61,8 +44,10 @@ jobs:
         run: |
           mkdir -p "${{ runner.temp }}"
           cd "${{ runner.temp }}"
+          # 26.1.10909125 is the internal version of NDK r26b. The download
+          # filename uses the letter form, not the numeric version.
           curl -fSL -o ndk.zip \
-            "https://dl.google.com/android/repository/android-ndk-r${{ env.NDK_VERSION }}-linux.zip"
+            "https://dl.google.com/android/repository/android-ndk-r26b-linux.zip"
           unzip -q ndk.zip
           rm ndk.zip
 

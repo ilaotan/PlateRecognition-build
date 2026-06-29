@@ -39,8 +39,7 @@
 
 ### 触发方式
 
-- **push** 到 `main` / `master` / `develop` 分支会同时触发 `build-so` 与 `build-apk`。
-- **手动触发**：在 GitHub Actions 页面选择对应 workflow，点击 `Run workflow`。
+- **手动触发**（推荐）：在 GitHub Actions 页面选择 `build-so` 或 `build-apk`，点击 `Run workflow`。两个工作流均设置为仅手动触发，push 不会自动运行。
 - `build-apk` 完成后可在 Artifacts 区域下载：
   - `hyperlpr3-apk` — 可直接安装的 APK
   - `hyperlpr3-aar` — 集成进其它 Android 工程的 AAR
