@@ -69,6 +69,12 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-
 
+      - name: Build NCNN host tools (onnx2ncnn / ncnnoptimize)
+        run: |
+          bash scripts/build_ncnn_host.sh \
+            ./ncnn \
+            "${{ env.BUILD_DIR }}/ncnn-host-install"
+
       - name: Build NCNN for Android (all ABIs)
         run: |
           for ABI in arm64-v8a armeabi-v7a; do
@@ -94,7 +100,7 @@ jobs:
       - name: Convert ONNX models to NCNN
         run: |
           bash scripts/convert_onnx_to_ncnn.sh \
-            "${{ env.BUILD_DIR }}/ncnn-install/bin" \
+            "${{ env.BUILD_DIR }}/ncnn-host-install/bin" \
             ./PlateDetectionRecognition/test \
             "${{ env.BUILD_DIR }}/plate_ncnn_models"
 
