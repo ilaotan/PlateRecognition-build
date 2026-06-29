@@ -1,4 +1,4 @@
-package com.hyperai.hyperlpr_sdk_demo;
+package com.platerecognition.demo;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;

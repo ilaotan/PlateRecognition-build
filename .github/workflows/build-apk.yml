@@ -36,9 +36,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build clang g++-multilib \
-            git ca-certificates \
-            protobuf-compiler libprotobuf-dev \
             unzip zip
 
       - name: Cache Gradle
@@ -51,28 +48,6 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('hyperlpr3-android-sdk-master/**/*.gradle*') }}
           restore-keys: |
             gradle-${{ runner.os }}-
-
-      - name: Build NCNN host tools (onnx2ncnn / ncnnoptimize)
-        run: |
-          bash scripts/build_ncnn_host.sh \
-            ./ncnn \
-            "${{ env.BUILD_DIR }}/ncnn-host-install"
-
-      - name: Convert ONNX models to NCNN
-        run: |
-          bash scripts/convert_onnx_to_ncnn.sh \
-            "${{ env.BUILD_DIR }}/ncnn-host-install/bin" \
-            ./PlateDetectionRecognition/test \
-            "${{ env.BUILD_DIR }}/plate_ncnn_models"
-
-      - name: Copy NCNN models into Android assets
-        run: |
-          mkdir -p hyperlpr3-android-sdk-master/hyperlpr3/src/main/assets/plate_ncnn
-          cp -f "${{ env.BUILD_DIR }}/plate_ncnn_models/"*.param \
-                "${{ env.BUILD_DIR }}/plate_ncnn_models/"*.bin \
-                hyperlpr3-android-sdk-master/hyperlpr3/src/main/assets/plate_ncnn/ 2>/dev/null \
-                || (echo "ERROR: model files not produced" && exit 1)
-          ls -la hyperlpr3-android-sdk-master/hyperlpr3/src/main/assets/plate_ncnn/
 
       - name: Make gradlew executable
         working-directory: hyperlpr3-android-sdk-master

@@ -1,4 +1,4 @@
-package com.hyperai.hyperlpr_sdk_demo;
+package com.platerecognition.demo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;

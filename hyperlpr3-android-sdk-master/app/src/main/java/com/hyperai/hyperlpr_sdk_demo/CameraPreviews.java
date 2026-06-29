@@ -1,4 +1,4 @@
-package com.hyperai.hyperlpr_sdk_demo;
+package com.platerecognition.demo;
 
 import android.content.Context;
 import android.graphics.Paint;
