@@ -20,6 +20,12 @@ INSTALL_DIR="${2:-./build/ncnn-install}"
 NDK_DIR="${3:-${ANDROID_NDK_HOME:-}}"
 TARGET_ABI="${4:-arm64-v8a}"
 
+# Resolve absolute paths up-front; the script `cd`s later and
+# relative inputs would then resolve under the wrong directory.
+NCNN_SRC="$(cd "$(dirname "${NCNN_SRC}")" && pwd)/$(basename "${NCNN_SRC}")"
+mkdir -p "$(dirname "${INSTALL_DIR}")" 2>/dev/null || true
+INSTALL_DIR="$(cd "$(dirname "${INSTALL_DIR}")" && pwd)/$(basename "${INSTALL_DIR}")"
+
 if [[ -z "${NDK_DIR}" || ! -d "${NDK_DIR}" ]]; then
     echo "ERROR: Android NDK directory not provided. Set ANDROID_NDK_HOME or pass as 3rd arg." >&2
     exit 1
