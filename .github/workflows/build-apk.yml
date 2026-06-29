@@ -53,6 +53,19 @@ jobs:
         working-directory: hyperlpr3-android-sdk-master
         run: chmod +x gradlew
 
+      - name: Generate debug keystore
+        run: |
+          mkdir -p ~/.android
+          keytool -genkey -v \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -alias androiddebugkey \
+            -keypass android \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -dname "CN=Debug, OU=Android, O=Google, L=Mountain View, ST=California, C=US"
+
       - name: Build AAR
         working-directory: hyperlpr3-android-sdk-master
         run: |
