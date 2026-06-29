@@ -125,11 +125,11 @@ jobs:
       - name: Configure gradle.properties
         working-directory: hyperlpr3-android-sdk-master
         run: |
-          cat >> gradle.properties <<EOF
-NCNN_ROOT=${{ env.BUILD_DIR }}/ncnn-install
-OPENCV_ANDROID=${{ env.BUILD_DIR }}/opencv-android
-EOF
+          printf 'NCNN_ROOT=%s/ncnn-install\n' "$BUILD_DIR" >> gradle.properties
+          printf 'OPENCV_ANDROID=%s/opencv-android\n' "$BUILD_DIR" >> gradle.properties
           cat gradle.properties
+        env:
+          BUILD_DIR: ${{ env.BUILD_DIR }}
 
       - name: Pass env to gradle
         working-directory: hyperlpr3-android-sdk-master
