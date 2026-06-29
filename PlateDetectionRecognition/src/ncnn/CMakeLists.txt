@@ -55,7 +55,9 @@ endif()
 
 if(EXISTS "${_opencv_cmake_config}")
   message(STATUS "OpenCV CMake config: ${_opencv_cmake_config}")
-  set(OpenCV_DIR "${_opencv_cmake_config}")
+  # OpenCV_DIR must point to the *directory* containing OpenCVConfig.cmake,
+  # not to the file itself.
+  get_filename_component(OpenCV_DIR "${_opencv_cmake_config}" DIRECTORY)
   find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs calib3d)
   set(OPENCV_LIBS ${OpenCV_LIBS})
 else()
