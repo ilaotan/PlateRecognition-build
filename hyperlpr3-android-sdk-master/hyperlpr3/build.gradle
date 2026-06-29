@@ -17,26 +17,6 @@ android {
         consumerProguardFiles "consumer-rules.pro"
 
         ndk { abiFilters "armeabi-v7a", "arm64-v8a" }
-
-        externalNativeBuild {
-            cmake {
-                cppFlags "-std=c++17", "-fno-rtti", "-fno-exceptions", "-fvisibility=hidden"
-                arguments "-DANDROID_STL=c++_static"
-                // Pass through NCNN + OpenCV install prefixes so the CMake
-                // script does not need to know the absolute path at the
-                // call site. The CI workflow sets these as env vars;
-                // local builds can pass them as -P flags.
-                arguments "-DNCNN_ROOT=${project.findProperty('NCNN_ROOT') ?: System.getenv('NCNN_ROOT') ?: ''}"
-                arguments "-DOPENCV_ROOT=${project.findProperty('OPENCV_ANDROID') ?: System.getenv('OPENCV_ANDROID') ?: System.getenv('OPENCV_ROOT') ?: ''}"
-            }
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
-        }
     }
 
     buildTypes {
@@ -48,8 +28,6 @@ android {
 
     sourceSets {
         main {
-            // Old hand-shipped .so is no longer used. The new build
-            // emits into build/intermediates/cmake/<buildType>/obj/<abi>/.
             jniLibs.srcDirs = ['src/main/jniLibs']
             assets.srcDirs = ['src/main/assets']
         }
