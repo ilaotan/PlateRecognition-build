@@ -25,6 +25,9 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/core.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include "plate_algorithm_ncnn.h"
 
 #define LOG_TAG "HyperLPR-NCNN"

@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#include <opencv2/core.hpp>
+
 #include "DataTypes_Plate.h"
 #include "platedetector_yolov7_ncnn.h"
 #include "platerecognition_ncnn.h"

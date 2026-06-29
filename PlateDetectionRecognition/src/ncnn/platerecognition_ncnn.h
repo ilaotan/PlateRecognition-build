@@ -13,6 +13,8 @@
 
 #include <ncnn/net.h>
 
+#include <opencv2/core.hpp>
+
 #include "DataTypes_Plate.h"
 
 namespace plate::ncnn_backend {
