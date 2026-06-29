@@ -111,6 +111,9 @@ set(PDR_NCNN_SRCS
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+# jni_bridge.cpp is one directory deeper; it unqualifiedly includes
+# the algorithm header from this directory.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # ---- Target --------------------------------------------------------------
 add_library(hyperlpr3 SHARED ${PDR_NCNN_SRCS})
