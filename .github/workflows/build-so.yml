@@ -105,14 +105,26 @@ jobs:
           mkdir -p "${{ env.BUILD_DIR }}/opencv-android"
           cd "${{ env.BUILD_DIR }}/opencv-android"
           # OpenCV 4.10.0 Android pack. Bump as needed.
-          if [ ! -d sdk ]; then
+          if [ ! -d OpenCV-android-sdk ]; then
             curl -fSL -o opencv.zip \
               "https://github.com/opencv/opencv/releases/download/4.10.0/opencv-4.10.0-android-sdk.zip"
             unzip -q opencv.zip
             rm opencv.zip
-            # The release zip extracts to "OpenCV-android-sdk"; rename for clarity.
-            mv OpenCV-android-sdk sdk 2>/dev/null || true
           fi
+          # The release zip's top-level dir is "OpenCV-android-sdk/"; the
+          # real native + java artefacts live under that as "sdk/".  We
+          # pass ${BUILD_DIR}/opencv-android/OpenCV-android-sdk as
+          # OPENCV_ANDROID so that ${OPENCV_ANDROID}/sdk/native/... resolves
+          # correctly. (An earlier `mv OpenCV-android-sdk sdk` collapsed
+          # the outer dir and left a doubled "sdk/sdk/" path, which is why
+          # find_package() was failing.)
+          if [ ! -f OpenCV-android-sdk/sdk/native/jni/include/opencv2/core.hpp ]; then
+            echo "ERROR: OpenCV Android SDK extraction looks broken." >&2
+            find "${{ env.BUILD_DIR }}/opencv-android" -maxdepth 4 -type d | head -n 40
+            exit 1
+          fi
+          echo "OpenCV Android SDK layout:"
+          find OpenCV-android-sdk/sdk/native -maxdepth 3 -type d | sort
 
       - name: Convert ONNX models to NCNN
         run: |
@@ -126,7 +138,7 @@ jobs:
           bash scripts/build_hyperlpr3_so.sh \
             "${{ env.ANDROID_NDK_HOME }}" \
             "${{ env.BUILD_DIR }}/ncnn-install" \
-            "${{ env.BUILD_DIR }}/opencv-android" \
+            "${{ env.BUILD_DIR }}/opencv-android/OpenCV-android-sdk" \
             "${{ env.ANDROID_ABI }}" \
             "${{ env.BUILD_DIR }}/so-out"
 

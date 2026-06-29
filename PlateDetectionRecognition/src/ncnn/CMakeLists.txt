@@ -30,60 +30,43 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY
 # ---- OpenCV (Android package) --------------------------------------------
 # The Android library module ships an OpenCV AAR; when this file is
 # invoked standalone, the CI workflow provides OpenCV headers/libs via
-# $OPENCV_ANDROID path. We support the multiple layouts that the
-# upstream OpenCV Android SDK ships, depending on version:
-#   4.10+    -> sdk/native/staticlibs/<abi>/ + sdk/native/libs/<abi>/
-#   4.5~4.8  -> sdk/native/jni/3rdparty/libs/<abi>/ + sdk/native/jni/<abi>/
-#   4.0~4.2  -> sdk/native/libs/<abi>/ (shared only)
+# $OPENCV_ANDROID path. We delegate the layout discovery to OpenCV's
+# own CMake config file (works for OpenCV 4.5+ and 4.10+):
+#   sdk/native/jni/abi-<abi>/OpenCVConfig.cmake
+# which exports OPENCV_LIBS for the current ANDROID_ABI. The abi
+# directory is present in every officially published OpenCV Android
+# SDK we care about.
 
 if(DEFINED ENV{OPENCV_ANDROID})
   set(OPENCV_ANDROID $ENV{OPENCV_ANDROID})
 endif()
 
-set(_opencv_h_dirs
-    "${OPENCV_ANDROID}/sdk/native/jni/include"
-    "${OPENCV_ANDROID}/sdk/native/staticlibs/include")  # future layout
-foreach(d IN LISTS _opencv_h_dirs)
-  if(EXISTS "${d}/opencv2/core.hpp")
-    include_directories(${d})
-    set(_opencv_inc "${d}")
-    break()
-  endif()
-endforeach()
+message(STATUS "OPENCV_ANDROID = '${OPENCV_ANDROID}'")
 
-if(NOT _opencv_inc)
-  # Fall back to a system OpenCV (used by the standalone test driver on
-  # Linux). The Android build always sets OPENCV_ANDROID above.
+set(_opencv_cmake_config
+    "${OPENCV_ANDROID}/sdk/native/jni/abi-${ANDROID_ABI}/OpenCVConfig.cmake")
+
+# Older OpenCV Android SDK (4.0~4.2) ships a single OpenCVConfig.cmake
+# at sdk/native/jni/; it is selected by ANDROID_ABI automatically.
+if(NOT EXISTS "${_opencv_cmake_config}")
+  set(_opencv_cmake_config
+      "${OPENCV_ANDROID}/sdk/native/jni/OpenCVConfig.cmake")
+endif()
+
+if(EXISTS "${_opencv_cmake_config}")
+  message(STATUS "OpenCV CMake config: ${_opencv_cmake_config}")
+  set(OpenCV_DIR "${_opencv_cmake_config}")
   find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs calib3d)
   set(OPENCV_LIBS ${OpenCV_LIBS})
 else()
-  set(OPENCV_LIBS "")
-  set(_opencv_candidate_dirs
-      "${OPENCV_ANDROID}/sdk/native/jni/3rdparty/libs/${ANDROID_ABI}"
-      "${OPENCV_ANDROID}/sdk/native/staticlibs/${ANDROID_ABI}")
-  foreach(d IN LISTS _opencv_candidate_dirs)
-    if(EXISTS "${d}/libopencv_core.a")
-      foreach(m core imgproc imgcodecs calib3d)
-        list(APPEND OPENCV_LIBS "${d}/libopencv_${m}.a")
-      endforeach()
-      break()
-    endif()
-  endforeach()
-
-  if(NOT OPENCV_LIBS AND EXISTS "${OPENCV_ANDROID}/sdk/native/libs/${ANDROID_ABI}")
-    # Fall back to the shared .so from a packaged OpenCV Android SDK.
-    foreach(m core imgproc imgcodecs calib3d)
-      list(APPEND OPENCV_LIBS
-           "${OPENCV_ANDROID}/sdk/native/libs/${ANDROID_ABI}/libopencv_${m}.so")
-    endforeach()
-  endif()
-
-  if(NOT OPENCV_LIBS)
-    message(FATAL_ERROR
-      "OpenCV libs not found for ${ANDROID_ABI} under ${OPENCV_ANDROID}. "
-      "Tried sdk/native/jni/3rdparty/libs, sdk/native/staticlibs and "
-      "sdk/native/libs.")
-  endif()
+  # Last-ditch fallback for the standalone Linux test driver: rely on
+  # a system OpenCV (apt install libopencv-dev) when no Android SDK
+  # is provided.
+  message(WARNING
+    "OpenCV Android SDK not found at ${OPENCV_ANDROID}; falling back to "
+    "system find_package(OpenCV). The build will fail on Android.")
+  find_package(OpenCV REQUIRED COMPONENTS core imgproc imgcodecs calib3d)
+  set(OPENCV_LIBS ${OpenCV_LIBS})
 endif()
 
 # ---- NCNN ----------------------------------------------------------------
