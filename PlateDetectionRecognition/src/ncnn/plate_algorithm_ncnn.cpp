@@ -36,9 +36,9 @@ HZFLAG PlateAlgorithm::Initialize(const NcnnConfig& cfg) {
   }
 
   if (cfg_.enable_recognize) {
-    recognizer_ = std::make_unique<PlateRecognizer>();
-    std::string recog_param = cfg_.recog_model_dir + "/plate_recognition.param";
-    HZFLAG rc = recognizer_->Init(recog_param, cfg_.num_threads);
+      recognizer_ = std::make_unique<PlateRecognizer>();
+      std::string recog_param = cfg_.recog_model_dir + "/plate_recognition_color.param";
+      HZFLAG rc = recognizer_->Init(recog_param, cfg_.num_threads);
     if (rc != HZ_SUCCESS) {
       recognizer_.reset();
       return rc;

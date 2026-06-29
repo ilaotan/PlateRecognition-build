@@ -57,7 +57,7 @@ public class HyperLPR3 extends TypeDefine implements APIDefine {
             SDKUtils.copyFilesFromAssets(context, SDKConfig.packDirName, mResourceFolderPath);
             Log.i(TAG, "resource: " + mResourceFolderPath);
             if (parameter.getModelPath() == null || "".equals(parameter.getModelPath())) {
-                parameter.setModelPath(mResourceFolderPath);
+                parameter.setModelPath(mResourceFolderPath + SDKConfig.packDirName + "/");
             }
             mCore.createRecognizerContext(parameter);
             isInitSuccess = true;
