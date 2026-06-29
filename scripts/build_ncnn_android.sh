@@ -76,7 +76,11 @@ cmake "${NCNN_SRC}" \
     -DNCNN_VULKAN=OFF \
     -DNCNN_PYTHON=OFF \
     -DNCNN_SHARED_LIB=OFF \
-    -DNCNN_OPENMP=ON \
+    # Disable OpenMP: avoids dragging libomp into the final .so. NCNN's
+    # convolution kernels fall back to a single-threaded path on Android,
+    # which is fine for our use case (NCNN threads option still lets the
+    # caller parallelize across blobs at a higher level).
+    -DNCNN_OPENMP=OFF \
     -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" \
     -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
