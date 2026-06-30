@@ -53,8 +53,7 @@ public class CameraPreviews extends SurfaceView implements SurfaceHolder.Callbac
 //        mPaint.setColor(ContextCompat.getColor(context, R.color.colorAccent));
 
         HyperLPRParameter parameter = new HyperLPRParameter();
-//        hyperLPR3 = new HyperLPR3();
-//        hyperLPR3.init(mContext, parameter);
+        HyperLPR3.getInstance().init(mContext, parameter);
     }
     public Camera getCameraInstance(){
         if (mCamera == null){
