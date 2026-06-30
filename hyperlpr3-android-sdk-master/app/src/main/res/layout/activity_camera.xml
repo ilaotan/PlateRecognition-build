@@ -21,5 +21,18 @@
         android:textSize="20sp"
         android:text="请对准车牌" />
 
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="10dp">
+        <TextView
+            android:id="@+id/log_tv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="30dp"
+            android:textSize="14sp"
+            android:textColor="#FF0000"
+            android:text="日志:" />
+    </ScrollView>
 
 </LinearLayout>

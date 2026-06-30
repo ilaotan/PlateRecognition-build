@@ -53,7 +53,10 @@ public class CameraPreviews extends SurfaceView implements SurfaceHolder.Callbac
 //        mPaint.setColor(ContextCompat.getColor(context, R.color.colorAccent));
 
         HyperLPRParameter parameter = new HyperLPRParameter();
+        Log.i(TAG, "init SDK start");
         HyperLPR3.getInstance().init(mContext, parameter);
+        Log.i(TAG, "init SDK end");
+        sendLog("SDK初始化完成");
     }
     public Camera getCameraInstance(){
         if (mCamera == null){
@@ -128,19 +131,23 @@ public class CameraPreviews extends SurfaceView implements SurfaceHolder.Callbac
     @Override
     public void onPreviewFrame(final byte[] data, final Camera camera) {
         synchronized (lock){
-            // 处理data
             Camera.Size previewSize = camera.getParameters().getPreviewSize();
+            sendLog("帧尺寸: " + previewSize.width + "x" + previewSize.height);
             Plate[] plates = HyperLPR3.getInstance().plateRecognition(data, previewSize.height, previewSize.width, HyperLPR3.CAMERA_ROTATION_270, HyperLPR3.STREAM_YUV_NV21);
+            sendLog("识别结果: " + plates.length + "个车牌");
             for (Plate plate : plates) {
                 Log.i(TAG,  "" + plate.toString());
             }
 
             if(!isStopReg && plates.length > 0) {
-//                isStopReg = true;
                 sendPlate(plates);
             }
 
         }
+    }
+
+    private void sendLog(final String msg){
+        EventBus.getDefault().post(msg);
     }
 
     private void sendPlate(Plate[] plates){

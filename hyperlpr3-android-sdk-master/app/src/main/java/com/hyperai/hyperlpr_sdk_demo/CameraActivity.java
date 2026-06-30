@@ -33,6 +33,7 @@ public class CameraActivity extends Activity {
     FrameLayout previewFl;
     CameraPreviews cameraPreview;
     TextView plateTv;
+    TextView logTv;
 //    TextView regTv;
     ImageView image;
 
@@ -48,6 +49,7 @@ public class CameraActivity extends Activity {
     private void initCamera() {
         previewFl = findViewById(R.id.preview_fl);
         plateTv = findViewById(R.id.plate_tv);
+        logTv = findViewById(R.id.log_tv);
         image = findViewById(R.id.image);
         cameraPreview = new CameraPreviews(this);
         previewFl.addView(cameraPreview);
@@ -81,6 +83,12 @@ public class CameraActivity extends Activity {
     protected void onStop() {
         super.onStop();
         EventBus.getDefault().unregister(this);
+    }
+
+    @SuppressLint("SetTextI18n")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onMessageEvent(String log) {
+        logTv.append("\n" + log);
     }
 
     @SuppressLint("SetTextI18n")
