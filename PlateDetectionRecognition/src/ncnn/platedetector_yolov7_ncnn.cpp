@@ -153,28 +153,28 @@ HZFLAG Yolov7PlateDetector::Detect(const cv::Mat& bgr,
   ncnn::Mat out;
   ex.extract("output", out);
 
-  // The output is laid out as (NUM_BOX_ELEMENT, num_anchors) where
-  // NUM_BOX_ELEMENT = 5 (cx,cy,w,h,obj) + num_classes + 2*num_keypoints
-  // Anchors are listed per-stride concatenated. We don't know the
-  // exact stride count at runtime, so we treat the whole buffer as a
-  // single feature column with NUM_BOX_ELEMENT rows.
-  const int num_anchors = out.w;
-  const int num_box_element = out.h;
-  // Sanity check: 5 + num_classes_ + 2*num_keypoints_
   const int expected = 5 + num_classes_ + 2 * num_keypoints_;
-  if (num_box_element != expected) {
-    std::cerr << "[Yolov7PlateDetector] Unexpected output dims h=" << num_box_element
-              << " expected=" << expected
-              << " w=" << num_anchors << std::endl;
+  int num_anchors;
+  int num_box_element;
+  bool transposed = false;
+  if (out.h == expected) {
+    num_anchors = out.w;
+    num_box_element = out.h;
+  } else if (out.w == expected) {
+    num_anchors = out.h;
+    num_box_element = out.w;
+    transposed = true;
+  } else {
+    std::cerr << "[Yolov7PlateDetector] Unexpected output dims w=" << out.w
+              << " h=" << out.h
+              << " expected_box_element=" << expected << std::endl;
     return HZ_ERROR;
   }
 
-  // Decode per anchor.
   std::vector<Det> proposals;
   proposals.reserve(64);
-  const float* data = out.row(0);
   for (int i = 0; i < num_anchors; ++i) {
-    const float* row = data + i * num_box_element;
+    const float* row = transposed ? out.row(i) : out.row(0) + i * num_box_element;
     const float obj = Sigmoid(row[4]);
     if (obj < conf_threshold_) {
       continue;
