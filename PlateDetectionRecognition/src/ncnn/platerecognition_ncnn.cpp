@@ -112,7 +112,7 @@ HZFLAG PlateRecognizer::Run(const cv::Mat& plate_bgr,
 
   ncnn::Extractor ex = net_.create_extractor();
   ex.set_num_threads(num_threads_);
-  ex.input("input", in);
+  ex.input("images", in);
 
   // Two softmax heads. The original graph names them as
   // "output" (text) and "color" (color). The ONNX->NCNN tool
@@ -120,11 +120,11 @@ HZFLAG PlateRecognizer::Run(const cv::Mat& plate_bgr,
   // .param edit if necessary.
   ncnn::Mat text_logits;
   ncnn::Mat color_logits;
-  if (ex.extract("output", text_logits) != 0) {
+  if (ex.extract("output_1", text_logits) != 0) {
     std::cerr << "[PlateRecognizer] extract text logits failed" << std::endl;
     return HZ_ERROR;
   }
-  if (ex.extract("color", color_logits) != 0) {
+  if (ex.extract("output_2", color_logits) != 0) {
     // Some checkpoints only output plate text; treat as unknown color.
     plate_color = "未知";
   } else {
