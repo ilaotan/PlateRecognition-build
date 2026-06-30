@@ -61,7 +61,7 @@ class Yolov7PlateDetector {
   int input_w_ = 640;
   int input_h_ = 640;
   int num_classes_ = 2;     // 0 single layer, 1 double layer
-  int num_keypoints_ = 4;
+  int num_keypoints_ = 6;    // 6 keypoints = 12 values
   int num_threads_ = 4;
   float conf_threshold_ = 0.3f;
   float nms_threshold_ = 0.3f;
