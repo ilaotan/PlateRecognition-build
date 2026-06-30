@@ -161,16 +161,24 @@ public class MainActivity extends AppCompatActivity {
         if (bitmap != null) {
 
             imageView.setImageBitmap(bitmap);
+            Log.i(TAG, "开始识别, bitmap=" + bitmap.getWidth() + "x" + bitmap.getHeight());
             Plate[] plates =  HyperLPR3.getInstance().plateRecognition(bitmap, HyperLPR3.CAMERA_ROTATION_0, HyperLPR3.STREAM_BGRA);
-            for (Plate plate: plates) {
-                String type = "未知车牌";
-                if (plate.getType() != HyperLPR3.PLATE_TYPE_UNKNOWN) {
-                    type = HyperLPR3.PLATE_TYPE_MAPS[plate.getType()];
-                }
-                String pStr = "[" + type + "]" + plate.getCode() + "\n";
-                showText += pStr;
-                mResult.setText(showText);
+            Log.i(TAG, "识别完成, 结果数量=" + (plates != null ? plates.length : 0));
+            if (plates != null && plates.length > 0) {
+                for (Plate plate: plates) {
+                    String type = "未知车牌";
+                    if (plate.getType() != HyperLPR3.PLATE_TYPE_UNKNOWN) {
+                        type = HyperLPR3.PLATE_TYPE_MAPS[plate.getType()];
+                    }
+                    String pStr = "[" + type + "]" + plate.getCode() + "\n";
+                    showText += pStr;
+                    Log.i(TAG, "识别结果: " + pStr);
+                    mResult.setText(showText);
 
+                }
+            } else {
+                Log.i(TAG, "未识别到车牌");
+                mResult.setText("未识别到车牌");
             }
         }
     }
