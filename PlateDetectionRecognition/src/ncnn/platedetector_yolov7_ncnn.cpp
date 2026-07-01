@@ -153,7 +153,7 @@ HZFLAG Yolov7PlateDetector::Detect(const cv::Mat& bgr,
   ncnn::Mat out;
   ex.extract("output", out);
 
-  const int expected = 5 + num_classes_ + 2 * num_keypoints_;
+  const int expected = 5 + num_classes_ + 3 * num_keypoints_;
   int num_anchors;
   int num_box_element;
   bool transposed = false;
@@ -175,14 +175,14 @@ HZFLAG Yolov7PlateDetector::Detect(const cv::Mat& bgr,
   proposals.reserve(64);
   for (int i = 0; i < num_anchors; ++i) {
     const float* row = transposed ? out.row(i) : out.row(0) + i * num_box_element;
-    const float obj = Sigmoid(row[4]);
+    const float obj = row[4];
     if (obj < conf_threshold_) {
       continue;
     }
     int best_class = -1;
     float best_score = 0.f;
     for (int c = 0; c < num_classes_; ++c) {
-      float s = Sigmoid(row[5 + c]);
+      float s = row[5 + c];
       if (s > best_score) {
         best_score = s;
         best_class = c;
@@ -215,8 +215,8 @@ HZFLAG Yolov7PlateDetector::Detect(const cv::Mat& bgr,
     d.key_points.clear();
     d.key_points.reserve(num_keypoints_ * 2);
     for (int k = 0; k < num_keypoints_; ++k) {
-      float kx = (row[5 + num_classes_ + 2 * k] - pad_w) / scale;
-      float ky = (row[5 + num_classes_ + 2 * k + 1] - pad_h) / scale;
+      float kx = (row[5 + num_classes_ + 3 * k] - pad_w) / scale;
+      float ky = (row[5 + num_classes_ + 3 * k + 1] - pad_h) / scale;
       d.key_points.push_back(kx);
       d.key_points.push_back(ky);
     }

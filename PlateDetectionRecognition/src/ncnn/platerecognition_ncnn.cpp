@@ -97,17 +97,14 @@ HZFLAG PlateRecognizer::Run(const cv::Mat& plate_bgr,
     return HZ_IMGEMPTY;
   }
 
-  cv::Mat pre = CenterCrop(plate_bgr);
+  cv::Mat pre;
+  cv::resize(plate_bgr, pre, cv::Size(input_w_, input_h_));
 
-  // NCNN input: BGR -> RGB, normalize to [0,1] (model is BGR-trained
-  // but ONNX export usually keeps BGR; we pass through and let the
-  // graph handle it). The .param produced by onnx2ncnn honors the
-  // original graph's mean/scale constants.
   ncnn::Mat in = ncnn::Mat::from_pixels(pre.data, ncnn::Mat::PIXEL_BGR,
                                          input_w_, input_h_);
-  const float mean_vals[3] = {0.485f * 255.f, 0.456f * 255.f, 0.406f * 255.f};
-  const float norm_vals[3] = {1 / (0.229f * 255.f), 1 / (0.224f * 255.f),
-                              1 / (0.225f * 255.f)};
+  const float mean_vals[3] = {0.588f * 255.f, 0.588f * 255.f, 0.588f * 255.f};
+  const float norm_vals[3] = {1 / (0.193f * 255.f), 1 / (0.193f * 255.f),
+                              1 / (0.193f * 255.f)};
   in.substract_mean_normalize(mean_vals, norm_vals);
 
   ncnn::Extractor ex = net_.create_extractor();
